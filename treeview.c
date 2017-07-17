@@ -7,7 +7,8 @@
 #include <sys/param.h>
 
 #define COLOR_MAGENTA "\x1b[35m"
-#define COLOR_RESET "\x1b[0m"
+#define COLOR_RESET   "\x1b[0m"
+#define COLOR_BLUE    "\x1b[34m"
 
 const int MAXFILENAME = 1024;
 struct File {
@@ -15,7 +16,7 @@ struct File {
         char type;
 };
 
-void printFiles(char *cwd, int *deep);
+void printFiles(char *cwd, int *deep, char *name);
 
 void usageSimplified();
 
@@ -23,6 +24,7 @@ void usage();
 
 int main(int argc, char **argv) {
     char cwd[MAXPATHLEN];
+    char name[1024];
     getwd(cwd);
     //OPTIONS
     if(argc > 3) usageSimplified();
@@ -35,22 +37,25 @@ int main(int argc, char **argv) {
                     case 'h' :
                         usage();
                         break;
+                    case 's' :
+                        strcpy(name, argv[i+1]);
+                        break;
                     default:
                         usageSimplified();
                 }
             }
         }
         else {
-            strcpy(cwd, argv[i]);
+            //strcpy(cwd, argv[i]);
         }
     }
 
     printf("%s\n\n", cwd);
     int deep = 1;
-    printFiles(cwd, &deep);
+    printFiles(cwd, &deep, name);
 }
 
-void printFiles(char *cwd, int *deep){
+void printFiles(char *cwd, int *deep, char *name){
     int i;
     char buff[MAXPATHLEN];
     DIR *dir;
@@ -62,15 +67,17 @@ void printFiles(char *cwd, int *deep){
                     for(i = 0; i < ((*deep)-1)*4; i++) printf(" ");
                     if(*deep > 1) for(i = 0; i < (*deep)-1; i++) printf(" ");
                     printf(" |----");
-                    printf(COLOR_MAGENTA "%s\n" COLOR_RESET, ent->d_name);
+                    if(!strcmp(name, ent->d_name)) printf(COLOR_BLUE "%s\n" COLOR_RESET, ent->d_name);
+                    else printf(COLOR_MAGENTA "%s\n" COLOR_RESET, ent->d_name);
                     (*deep)++;
                     sprintf(buff, "%s/%s",cwd, ent->d_name);
-                    printFiles(buff, deep);
+                    printFiles(buff, deep, name);
                 }
                 else {
                     for(i = 0; i <= ((*deep)-1)*4; i++) printf(" ");
                     if(*deep > 1) for(i = 0; i < (*deep)-1; i++) printf(" ");
-                    printf("|----%s\n", ent->d_name);
+                    if(!strcmp(name, ent->d_name)) printf(COLOR_BLUE "|----%s\n" COLOR_RESET, ent->d_name);
+                    else printf("|----%s\n", ent->d_name);
                 }
             }
         }
