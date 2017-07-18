@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/param.h>
+#include <getopt.h>
 
 #define COLOR_MAGENTA "\x1b[35m"
 #define COLOR_RESET   "\x1b[0m"
@@ -18,37 +19,44 @@ struct File {
 
 void printFiles(char *cwd, int *deep, char *name);
 
-void usageSimplified();
-
-void usage();
-
 int main(int argc, char **argv) {
     char cwd[MAXPATHLEN];
     char name[1024];
-    getwd(cwd);
-    //OPTIONS
-    if(argc > 3) usageSimplified();
-    int i,j;
-    for(i = 1; i < argc; i++){
-        if(argv[i][0] == '-'){
-            for(j = 1; argv[i][j] != '\0'; j++){
-                char c = argv[i][j];
-                switch(c) {
-                    case 'h' :
-                        usage();
-                        break;
-                    case 's' :
-                        strcpy(name, argv[i+1]);
-                        break;
-                    default:
-                        usageSimplified();
-                }
-            }
-        }
-        else {
-            //strcpy(cwd, argv[i]);
-        }
+    int c;
+    char *opt = "hs:";
+    struct option long_opt[] = {
+      {"help", no_argument, NULL, 'h'},
+      {"search", required_argument, NULL, 's'},
+      {NULL, 0, NULL, 0}
+    };
+
+    while((c = getopt_long(argc, argv, opt, long_opt, NULL)) != -1){
+      switch(c){
+        case 'h':
+          printf("Usage: %s [OPTIONS]\n", argv[0]);
+          printf("  -s, --search file/folder            search for this file or folder\n");
+          printf("  -h, --help                          print this help and exit\n");
+          printf("\n");
+          return(0);
+
+        case 's':
+          strcpy(name, optarg);
+          break;
+
+         case ':':
+         case '?':
+         fprintf(stderr, "Try `%s --help' for more information.\n", argv[0]);
+         return(-2);
+
+         default:
+         fprintf(stderr, "%s: invalid option -- %c\n", argv[0], c);
+         fprintf(stderr, "Try `%s --help' for more information.\n", argv[0]);
+         return(-2);
+      }
     }
+    if(optind>=argc) getwd(cwd);
+    else strcpy(cwd, argv[optind]);
+
 
     printf("%s\n\n", cwd);
     int deep = 1;
@@ -88,19 +96,4 @@ void printFiles(char *cwd, int *deep, char *name){
         printf("Somethig went wrong while trying to open the folder \"%s\" - %s\n", cwd, strerror(errno));
         exit(1);
     }
-}
-
-void usage(){
-    printf("Usage: treeview [FLAGS] [PATH]\n");
-    printf("If you don't specify a path, path will be you current working directory\n");
-    printf("Folders will be displayed in magenta\n\n");
-    printf("FLAGS:\n");
-    printf("      -h: shows information about this tool\n\n");
-    exit(0);
-}
-
-void usageSimplified(){
-    printf("Usage: treeview [FLAGS] [PATH]\n");
-    printf("Use the flag -h to get more help\n\n");
-    exit(0);
 }
